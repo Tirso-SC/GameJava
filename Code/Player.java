@@ -48,20 +48,20 @@ public class Player extends Objeto {
     private void loadSprites() {
         addAnimation(
             "idle",
-            "C:\\Users\\Tirso\\OneDrive - Universidad Pontificia Comillas\\Documentos\\ICAI\\Curso2.0.2\\progrmación\\GameJavaProject\\Assets\\Personajes\\SamurayPersonajes\\Samurai\\Idle.png"
+            "C:\\Users\\Tirso\\OneDrive - Universidad Pontificia Comillas\\Documentos\\ICAI\\Curso2.0.2\\progrmación\\GameJava\\Assets\\Personajes\\SamurayPersonajes\\Samurai\\Idle.png"
         );
 
         addAnimation(
             "walk",
-            "C:\\Users\\Tirso\\OneDrive - Universidad Pontificia Comillas\\Documentos\\ICAI\\Curso2.0.2\\progrmación\\GameJavaProject\\Assets\\Personajes\\SamurayPersonajes\\Samurai\\Walk.png"
+            "C:\\Users\\Tirso\\OneDrive - Universidad Pontificia Comillas\\Documentos\\ICAI\\Curso2.0.2\\progrmación\\GameJava\\Assets\\Personajes\\SamurayPersonajes\\Samurai\\Walk.png"
         );
         addAnimation(
             "attack",
-            "C:\\Users\\Tirso\\OneDrive - Universidad Pontificia Comillas\\Documentos\\ICAI\\Curso2.0.2\\progrmación\\GameJavaProject\\Assets\\Personajes\\SamurayPersonajes\\Samurai\\Attack.png"
+            "C:\\Users\\Tirso\\OneDrive - Universidad Pontificia Comillas\\Documentos\\ICAI\\Curso2.0.2\\progrmación\\GameJava\\Assets\\Personajes\\SamurayPersonajes\\Samurai\\Attack.png"
         );
         addAnimation(
             "jump",
-            "C:\\Users\\Tirso\\OneDrive - Universidad Pontificia Comillas\\Documentos\\ICAI\\Curso2.0.2\\progrmación\\GameJavaProject\\Assets\\Personajes\\SamurayPersonajes\\Samurai\\Jump.png",
+            "C:\\Users\\Tirso\\OneDrive - Universidad Pontificia Comillas\\Documentos\\ICAI\\Curso2.0.2\\progrmación\\GameJava\\Assets\\Personajes\\SamurayPersonajes\\Samurai\\Jump.png",
             false
         );
     }
