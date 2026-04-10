@@ -1,0 +1,6 @@
+﻿C:\Users\Tirso\OneDrive - Universidad Pontificia Comillas\Documentos\ICAI\Curso2.0.2\progrmación\GameJava\Code\Animation.java
+C:\Users\Tirso\OneDrive - Universidad Pontificia Comillas\Documentos\ICAI\Curso2.0.2\progrmación\GameJava\Code\GamePanel.java
+C:\Users\Tirso\OneDrive - Universidad Pontificia Comillas\Documentos\ICAI\Curso2.0.2\progrmación\GameJava\Code\KeyHandler.java
+C:\Users\Tirso\OneDrive - Universidad Pontificia Comillas\Documentos\ICAI\Curso2.0.2\progrmación\GameJava\Code\Main.java
+C:\Users\Tirso\OneDrive - Universidad Pontificia Comillas\Documentos\ICAI\Curso2.0.2\progrmación\GameJava\Code\Objeto.java
+C:\Users\Tirso\OneDrive - Universidad Pontificia Comillas\Documentos\ICAI\Curso2.0.2\progrmación\GameJava\Code\Player.java
