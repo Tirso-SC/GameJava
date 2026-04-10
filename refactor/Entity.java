@@ -12,6 +12,18 @@ public abstract class Entity {
         this.width = width;
         this.height = height;
     }
+// En Entity.java — añade este método
+    public int getX() {
+        return x;
+}
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
 
     public abstract void update(ContextoJuego context);
 

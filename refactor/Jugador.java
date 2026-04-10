@@ -1,8 +1,8 @@
 public class Jugador extends CharacterEntity {
     private static final int DEFAULT_X = 100;
-    private static final int DEFAULT_Y = 300;
-    private static final int DEFAULT_SPEED = 4;
-    private static final int ANIMATION_SPEED = 10;
+    private static final int DEFAULT_Y = 383;
+    private static final int DEFAULT_SPEED = 7;
+    private static final int ANIMATION_SPEED = 5;
 
     private static final String SPRITES_DIR = "Assets/Personajes/SamurayPersonajes/Samurai";
     private static final String IDLE_PATH = SPRITES_DIR + "/Idle.png";
@@ -27,9 +27,11 @@ public class Jugador extends CharacterEntity {
     private double verticalSpeed;
     private double yFloat;
     private int groundY;
+    private int worldX;
 
     public Jugador(int size) {
         super(DEFAULT_X, DEFAULT_Y, size, size, DEFAULT_SPEED);
+        this.worldX = DEFAULT_X;
         this.yFloat = y;
         this.groundY = y;
         loadAnimations();
@@ -54,7 +56,7 @@ public class Jugador extends CharacterEntity {
     public void update(ContextoJuego context) {
         KeyHandler keys = context.getKeyHandler();
 
-        updateHorizontalMovement(keys, context.getScreenWidth());
+        updateHorizontalMovement(keys);
         updateJumpInput(keys);
         updateAttackInput(keys);
         updateVerticalPhysics(context.getScreenHeight());
@@ -62,14 +64,19 @@ public class Jugador extends CharacterEntity {
         animationController.update();
     }
 
-    private void updateHorizontalMovement(KeyHandler keys, int screenWidth) {
+    private void updateHorizontalMovement(KeyHandler keys) {
         if (keys.leftPressed) {
-            moveLeft();
+            worldX -= speed;
+            facingRight = false;
         }
         if (keys.rightPressed) {
-            moveRight();
+            worldX += speed;
+            facingRight = true;
         }
-        clampHorizontal(screenWidth);
+
+        if (worldX < 0) {
+            worldX = 0;
+        }
     }
     private void updateAttackInput(KeyHandler keys) {
         boolean attackPressed = keys.iPressed;
@@ -164,5 +171,14 @@ public class Jugador extends CharacterEntity {
     @Override
     protected int getSpriteOffsetX(int drawWidth) {
         return super.getSpriteOffsetX(drawWidth) + SPRITE_OFFSET_X;
+    }
+
+    public int getWorldX() {
+        return worldX;
+    }
+
+    public void updateScreenPosition(int cameraX, int screenWidth) {
+        x = worldX - cameraX;
+        clampHorizontal(screenWidth);
     }
 }
