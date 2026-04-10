@@ -1,13 +1,13 @@
 public class Jugador extends CharacterEntity {
     private static final int DEFAULT_X = 100;
-    private static final int DEFAULT_Y = 100;
+    private static final int DEFAULT_Y = 300;
     private static final int DEFAULT_SPEED = 4;
     private static final int ANIMATION_SPEED = 10;
 
     private static final String SPRITES_DIR = "Assets/Personajes/SamurayPersonajes/Samurai";
     private static final String IDLE_PATH = SPRITES_DIR + "/Idle.png";
     private static final String WALK_PATH = SPRITES_DIR + "/Walk.png";
-    private static final String ATTACK_PATH = SPRITES_DIR + "/Attack.png";
+    private static final String ATTACK_PATH = SPRITES_DIR + "/Attack_1.png";
     private static final String JUMP_PATH = SPRITES_DIR + "/Jump.png";
 
     private static final double JUMP_START_VELOCITY = -14.0;
@@ -18,9 +18,12 @@ public class Jugador extends CharacterEntity {
     private static final int SPRITE_OFFSET_X = -27;
 
     private boolean jumping;
+    private boolean attacking;
+    
     private boolean jumpStarted;
     private boolean landingCompleted;
     private boolean previousJumpPressed;
+    private boolean previousAttackPressed;
     private double verticalSpeed;
     private double yFloat;
     private int groundY;
@@ -35,7 +38,7 @@ public class Jugador extends CharacterEntity {
     private void loadAnimations() {
         addAnimation(EstadoAnimacion.IDLE, IDLE_PATH, true);
         addAnimation(EstadoAnimacion.WALK, WALK_PATH, true);
-        addAnimation(EstadoAnimacion.ATTACK, ATTACK_PATH, true);
+        addAnimation(EstadoAnimacion.ATTACK, ATTACK_PATH, false);
         addAnimation(EstadoAnimacion.JUMP, JUMP_PATH, false);
         play(EstadoAnimacion.IDLE);
     }
@@ -53,6 +56,7 @@ public class Jugador extends CharacterEntity {
 
         updateHorizontalMovement(keys, context.getScreenWidth());
         updateJumpInput(keys);
+        updateAttackInput(keys);
         updateVerticalPhysics(context.getScreenHeight());
         updateAnimationState(keys);
         animationController.update();
@@ -67,7 +71,20 @@ public class Jugador extends CharacterEntity {
         }
         clampHorizontal(screenWidth);
     }
+    private void updateAttackInput(KeyHandler keys) {
+        boolean attackPressed = keys.iPressed;
 
+        if (attackPressed && !previousAttackPressed && !jumping && !attacking) {
+            attacking = true;
+            play(EstadoAnimacion.ATTACK);
+        }
+
+        previousAttackPressed = attackPressed;
+
+        if (attacking && isCurrentAnimationFinished()) {
+            attacking = false;
+        }
+    }
     private void updateJumpInput(KeyHandler keys) {
         boolean jumpPressed = keys.upPressed;
 
@@ -134,9 +151,12 @@ public class Jugador extends CharacterEntity {
             return;
         }
 
-        if (moving) {
+        if (attacking) {
+            play(EstadoAnimacion.ATTACK);
+        } else if (moving) {
             play(EstadoAnimacion.WALK);
         } else {
+
             play(EstadoAnimacion.IDLE);
         }
     }

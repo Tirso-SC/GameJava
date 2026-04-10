@@ -21,6 +21,8 @@ public class GamePanel extends JPanel implements Runnable {
     private final Jugador player;
     private final Timer timer;
     private final ContextoJuego context;
+    private final BackgroundManager fondo;
+    
 
     private Thread gameThread;
 
@@ -35,7 +37,7 @@ public class GamePanel extends JPanel implements Runnable {
 
         player = new Jugador(playerSize);
         context = new ContextoJuego(screenWidth, screenHeight, keyHandler);
-
+        fondo = new BackgroundManager(screenWidth,screenHeight);
         timer = new Timer(1000 / FPS, e -> {
             updateGame();
             repaint();
@@ -54,11 +56,13 @@ public class GamePanel extends JPanel implements Runnable {
 
     private void updateGame() {
         player.update(context);
+        
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        fondo.draw(g);
         player.draw(g);
     }
 }
