@@ -95,7 +95,7 @@ public class GamePanel extends JPanel implements Runnable {
         super.paintComponent(g);
         fondo.draw(g);
         objetos.draw(g, cameraX);
-        suelo.draw(g);
+        suelo.draw(g, cameraX);
         player.draw(g);
     }
 }

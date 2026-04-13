@@ -54,7 +54,7 @@ public class Tilemanager {
         };
     }
 
-    public void draw(Graphics g) {
+    public void draw(Graphics g, int cameraX) {
         for (int fila = 0; fila < mapa.length; fila++) {
             for (int col = 0; col < mapa[fila].length; col++) {
                 int tileId = mapa[fila][col];
@@ -63,9 +63,9 @@ public class Tilemanager {
                     continue;
                 }
 
-                int x = col * (tileSize-3);
+                int worldX = col * (tileSize - 3);
+                int x = worldX - cameraX;
                 int y = fila * tileSize;
-                System.out.println(x);
                 g.drawImage(tiles[tileId], x, y, tileSize, tileSize, null);
             }
         }
