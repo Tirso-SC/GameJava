@@ -1,3 +1,5 @@
+import java.awt.Rectangle;
+
 public class Jugador extends CharacterEntity {
     private static final int DEFAULT_X = 100;
     private static final int DEFAULT_Y = 383;
@@ -13,14 +15,15 @@ public class Jugador extends CharacterEntity {
     private static final double JUMP_START_VELOCITY = -14.0;
     private static final double GRAVITY = 0.70;
     private static final double MAX_FALL_SPEED = 14.0;
-    private static final int JUMP_TAKEOFF_FRAME = 2;
-    private static final int JUMP_LANDING_FRAME = 8;
-    private static final int SPRITE_OFFSET_X = 0;
+    private static final int IDLE_SPRITE_OFFSET_X_LEFT = -40;
+    private static final int IDLE_SPRITE_OFFSET_X_RIGHT = 40;
+    private static final int IDLE_SPRITE_OFFSET_Y = 0;
 
     private boolean jumping;
     private boolean attacking;
     private boolean previousJumpPressed;
     private boolean previousAttackPressed;
+    private boolean attackHitApplied;
     private double verticalSpeed;
     private double yFloat;
     private boolean onGround;
@@ -40,18 +43,24 @@ public class Jugador extends CharacterEntity {
     }
 
     private void loadAnimations() {
-        addAnimation(EstadoAnimacion.IDLE, IDLE_PATH, true);
-        addAnimation(EstadoAnimacion.WALK, WALK_PATH, true);
-        addAnimation(EstadoAnimacion.ATTACK, ATTACK_PATH, false);
-        addAnimation(EstadoAnimacion.JUMP, JUMP_PATH, false);
-        play(EstadoAnimacion.IDLE);
-    }
+        Animacion idle = CargadorHojasSprites.loadAnimation(IDLE_PATH, ANIMATION_SPEED, true);
+        Animacion walk = CargadorHojasSprites.loadAnimation(WALK_PATH, ANIMATION_SPEED, true);
+        Animacion attack = CargadorHojasSprites.loadAnimation(ATTACK_PATH, ANIMATION_SPEED, false);
+        Animacion jump = CargadorHojasSprites.loadAnimation(JUMP_PATH, ANIMATION_SPEED, false);
 
-    private void addAnimation(EstadoAnimacion state, String path, boolean loop) {
-        Animacion animation = CargadorHojasSprites.loadAnimation(path, ANIMATION_SPEED, loop);
-        if (animation != null) {
-            animationController.add(state, animation);
+        if (idle != null) {
+            animationController.add(EstadoAnimacion.IDLE, idle);
         }
+        if (walk != null) {
+            animationController.add(EstadoAnimacion.WALK, walk);
+        }
+        if (attack != null) {
+            animationController.add(EstadoAnimacion.ATTACK, attack);
+        }
+        if (jump != null) {
+            animationController.add(EstadoAnimacion.JUMP, jump);
+        }
+        play(EstadoAnimacion.IDLE);
     }
 
     @Override
@@ -62,10 +71,43 @@ public class Jugador extends CharacterEntity {
         ensureHitbox(tiles);
 
         updateHorizontalMovement(keys, tiles);
-        updateJumpInput(keys);
-        updateAttackInput(keys);
+
+        boolean jumpPressed = keys.upPressed;
+        if (jumpPressed && !previousJumpPressed && onGround) {
+            onGround = false;
+            jumping = true;
+            verticalSpeed = JUMP_START_VELOCITY;
+            yFloat = y;
+            play(EstadoAnimacion.JUMP);
+        }
+        previousJumpPressed = jumpPressed;
+
+        boolean attackPressed = keys.iPressed;
+        if (attackPressed && !previousAttackPressed && !jumping && !attacking) {
+            attacking = true;
+            attackHitApplied = false;
+            play(EstadoAnimacion.ATTACK);
+        }
+        previousAttackPressed = attackPressed;
+
+        if (attacking && isCurrentAnimationFinished()) {
+            attacking = false;
+            attackHitApplied = false;
+        }
+
         updateVerticalPhysics(context.getScreenHeight(), tiles);
-        updateAnimationState(keys);
+
+        boolean moving = keys.leftPressed || keys.rightPressed;
+        if (jumping) {
+            play(EstadoAnimacion.JUMP);
+        } else if (attacking) {
+            play(EstadoAnimacion.ATTACK);
+        } else if (moving) {
+            play(EstadoAnimacion.WALK);
+        } else {
+            play(EstadoAnimacion.IDLE);
+        }
+
         animationController.update();
     }
 
@@ -126,34 +168,6 @@ public class Jugador extends CharacterEntity {
 
         clampWorldX(tiles);
     }
-    private void updateAttackInput(KeyHandler keys) {
-        boolean attackPressed = keys.iPressed;
-
-        if (attackPressed && !previousAttackPressed && !jumping && !attacking) {
-            attacking = true;
-            play(EstadoAnimacion.ATTACK);
-        }
-
-        previousAttackPressed = attackPressed;
-
-        if (attacking && isCurrentAnimationFinished()) {
-            attacking = false;
-        }
-    }
-    private void updateJumpInput(KeyHandler keys) {
-        boolean jumpPressed = keys.upPressed;
-
-        if (jumpPressed && !previousJumpPressed && onGround) {
-            onGround = false;
-            jumping = true;
-            verticalSpeed = JUMP_START_VELOCITY;
-            yFloat = y;
-            play(EstadoAnimacion.JUMP);
-        }
-
-        previousJumpPressed = jumpPressed;
-    }
-
     private void updateVerticalPhysics(int screenHeight, Tilemanager tiles) {
         if (tiles == null) {
             return;
@@ -229,29 +243,6 @@ public class Jugador extends CharacterEntity {
         y = (int) Math.round(yFloat);
     }
 
-    private void updateAnimationState(KeyHandler keys) {
-        boolean moving = keys.leftPressed || keys.rightPressed;
-
-        if (jumping) {
-            play(EstadoAnimacion.JUMP);
-            return;
-        }
-
-        if (attacking) {
-            play(EstadoAnimacion.ATTACK);
-        } else if (moving) {
-            play(EstadoAnimacion.WALK);
-        } else {
-
-            play(EstadoAnimacion.IDLE);
-        }
-    }
-
-    @Override
-    protected int getSpriteOffsetX(int drawWidth) {
-        return super.getSpriteOffsetX(drawWidth) + SPRITE_OFFSET_X;
-    }
-
     public int getWorldX() {
         return worldX;
     }
@@ -259,6 +250,59 @@ public class Jugador extends CharacterEntity {
     public void updateScreenPosition(int cameraX, int screenWidth) {
         x = worldX - cameraX;
         clampHorizontal(screenWidth);
+    }
+
+    public boolean canDealAttack() {
+        return attacking && !attackHitApplied;
+    }
+
+    public void markAttackHit() {
+        attackHitApplied = true;
+    }
+
+    public Rectangle getAttackBounds() {
+        if (!attacking) {
+            return null;
+        }
+
+        int boxWidth = hitboxWidth > 0 ? hitboxWidth : width;
+        int boxHeight = hitboxHeight > 0 ? hitboxHeight : height;
+        int boxLeft = worldX + hitboxOffsetX;
+        int boxRight = boxLeft + boxWidth;
+        int boxTop = y + hitboxOffsetY;
+        int attackWidth = Math.max(1, (int) Math.round(boxWidth * 0.6));
+        int attackHeight = Math.max(1, (int) Math.round(boxHeight * 0.6));
+        int attackY = boxTop + (boxHeight - attackHeight);
+        int attackX = facingRight ? boxRight : (boxLeft - attackWidth);
+
+        return new Rectangle(attackX, attackY, attackWidth, attackHeight);
+    }
+
+    public Rectangle getHitboxBounds() {
+        int w = hitboxWidth > 0 ? hitboxWidth : width;
+        int h = hitboxHeight > 0 ? hitboxHeight : height;
+        int boxLeft = worldX + hitboxOffsetX;
+        int boxTop = y + hitboxOffsetY;
+        return new Rectangle(boxLeft, boxTop, w, h);
+    }
+
+    @Override
+    protected int getSpriteOffsetX(int drawWidth) {
+        int base = super.getSpriteOffsetX(drawWidth);
+        if (animationController.getCurrentState() == EstadoAnimacion.IDLE) {
+            int offset = facingRight ? IDLE_SPRITE_OFFSET_X_RIGHT : IDLE_SPRITE_OFFSET_X_LEFT;
+            return base + offset;
+        }
+        return base;
+    }
+
+    @Override
+    protected int getSpriteOffsetY(int drawHeight) {
+        int base = super.getSpriteOffsetY(drawHeight);
+        if (animationController.getCurrentState() == EstadoAnimacion.IDLE) {
+            return base + IDLE_SPRITE_OFFSET_Y;
+        }
+        return base;
     }
 
     private void clampWorldX(Tilemanager tiles) {

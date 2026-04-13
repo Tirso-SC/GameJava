@@ -1,6 +1,11 @@
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
@@ -11,6 +16,8 @@ public class GamePanel extends JPanel implements Runnable {
     private static final int MAX_SCREEN_ROW = 12;
     private static final int PLAYER_SCALE = 2;
     private static final int FPS = 60;
+    private static final int GROUND_ROW = 6;
+    private static final boolean DEBUG_HITBOXES = true;
 
     private final int tileSize = ORIGINAL_TILE_SIZE * SCALE;
     private final int screenWidth = tileSize * MAX_SCREEN_COL;
@@ -20,6 +27,7 @@ public class GamePanel extends JPanel implements Runnable {
 
     private final KeyHandler keyHandler;
     private final Jugador player;
+    private final List<Enemigo> enemies;
     private final Timer timer;
     private final ContextoJuego context;
     private final BackgroundManager fondo;
@@ -41,6 +49,12 @@ public class GamePanel extends JPanel implements Runnable {
         addKeyListener(keyHandler);
 
         player = new Jugador(playerSize);
+        enemies = new ArrayList<>();
+        int enemySize = (int) Math.round(tileSize * 1.25);
+        int enemySpeed = 2;
+        int enemyY = (GROUND_ROW * tileSize) - enemySize;
+        enemies.add(new Enemigo(tileSize * 5, enemyY, enemySize, enemySpeed));
+        enemies.add(new Enemigo(tileSize * 10, enemyY, enemySize, enemySpeed));
         fondo = new BackgroundManager(screenWidth,screenHeight);
         suelo= new Tilemanager(tileSize);
         objetos = new Staticobjectmanajer(tileSize);
@@ -63,10 +77,49 @@ public class GamePanel extends JPanel implements Runnable {
 
     private void updateGame() {
         player.update(context);
+        for (Enemigo enemy : enemies) {
+            enemy.update(context);
+        }
+        removeDeadEnemies();
+        handleAttacks();
         updateCamera();
         player.updateScreenPosition(cameraX, screenWidth);
+        for (Enemigo enemy : enemies) {
+            enemy.updateScreenPosition(cameraX);
+        }
         fondo.setCameraX(cameraX);
 
+    }
+
+    private void handleAttacks() {
+        if (!player.canDealAttack()) {
+            return;
+        }
+
+        Rectangle attackBounds = player.getAttackBounds();
+        if (attackBounds == null) {
+            return;
+        }
+
+        Iterator<Enemigo> iterator = enemies.iterator();
+        while (iterator.hasNext()) {
+            Enemigo enemy = iterator.next();
+            if (attackBounds.intersects(enemy.getHitboxBounds())) {
+                enemy.applyDamage(1);
+                player.markAttackHit();
+                break;
+            }
+        }
+    }
+
+    private void removeDeadEnemies() {
+        Iterator<Enemigo> iterator = enemies.iterator();
+        while (iterator.hasNext()) {
+            Enemigo enemy = iterator.next();
+            if (enemy.isDeadAnimationFinished()) {
+                iterator.remove();
+            }
+        }
     }
 
     private void updateCamera() {
@@ -96,6 +149,34 @@ public class GamePanel extends JPanel implements Runnable {
         fondo.draw(g);
         objetos.draw(g, cameraX);
         suelo.draw(g, cameraX);
+        for (Enemigo enemy : enemies) {
+            enemy.draw(g);
+        }
         player.draw(g);
+        if (DEBUG_HITBOXES) {
+            drawDebugHitboxes(g);
+        }
+    }
+
+    private void drawDebugHitboxes(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g;
+
+        Rectangle playerBox = player.getHitboxBounds();
+        if (playerBox != null) {
+            g2.setColor(Color.GREEN);
+            g2.drawRect(playerBox.x - cameraX, playerBox.y, playerBox.width, playerBox.height);
+        }
+
+        Rectangle attackBox = player.getAttackBounds();
+        if (attackBox != null) {
+            g2.setColor(Color.ORANGE);
+            g2.drawRect(attackBox.x - cameraX, attackBox.y, attackBox.width, attackBox.height);
+        }
+
+        g2.setColor(Color.RED);
+        for (Enemigo enemy : enemies) {
+            Rectangle enemyBox = enemy.getHitboxBounds();
+            g2.drawRect(enemyBox.x - cameraX, enemyBox.y, enemyBox.width, enemyBox.height);
+        }
     }
 }
