@@ -41,10 +41,10 @@ public class GamePanel extends JPanel implements Runnable {
         addKeyListener(keyHandler);
 
         player = new Jugador(playerSize);
-        context = new ContextoJuego(screenWidth, screenHeight, keyHandler);
         fondo = new BackgroundManager(screenWidth,screenHeight);
         suelo= new Tilemanager(tileSize);
         objetos = new Staticobjectmanajer(tileSize);
+        context = new ContextoJuego(screenWidth, screenHeight, keyHandler, suelo);
         timer = new Timer(1000 / FPS, e -> {
             updateGame();
             repaint();

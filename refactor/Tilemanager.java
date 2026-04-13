@@ -45,10 +45,10 @@ public class Tilemanager {
             {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
             {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
             {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-            {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-            {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2},
+            {0,0,0,0,0,0,0,2,0,0,0,0,0,0,0},
+            {0,0,0,2,0,0,0,0,0,0,0,0,0,0,0},
+            {1,1,1,1,1,1,1,1,1,1,0,0,0,1,1},
+            {2,2,2,2,2,2,2,2,2,2,0,0,0,2,2},
 
             
         };
@@ -63,11 +63,74 @@ public class Tilemanager {
                     continue;
                 }
 
-                int worldX = col * (tileSize - 3);
+                int worldX = col * tileSize;
                 int x = worldX - cameraX;
                 int y = fila * tileSize;
                 g.drawImage(tiles[tileId], x, y, tileSize, tileSize, null);
             }
         }
+    }
+
+    public int getTileSize() {
+        return tileSize;
+    }
+
+    public int getTileStepX() {
+        return tileSize;
+    }
+
+    public int getMapPixelWidth() {
+        if (mapa == null || mapa.length == 0) {
+            return 0;
+        }
+        int cols = mapa[0].length;
+        return cols * tileSize;
+    }
+
+    public int getMapPixelHeight() {
+        if (mapa == null) {
+            return 0;
+        }
+        return mapa.length * tileSize;
+    }
+
+    public int worldToCol(int worldX) {
+        int stepX = getTileStepX();
+        if (stepX <= 0) {
+            return 0;
+        }
+        return worldX / stepX;
+    }
+
+    public int worldToRow(int worldY) {
+        if (tileSize <= 0) {
+            return 0;
+        }
+        return worldY / tileSize;
+    }
+
+    public boolean isSolidAt(int worldX, int worldY) {
+        if (mapa == null) {
+            return false;
+        }
+
+        int col = worldToCol(worldX);
+        int row = worldToRow(worldY);
+
+        if (row < 0 || col < 0 || row >= mapa.length || col >= mapa[row].length) {
+            return false;
+        }
+
+        return mapa[row][col] != 0;
+    }
+
+    public boolean isSolidTile(int row, int col) {
+        if (mapa == null) {
+            return false;
+        }
+        if (row < 0 || col < 0 || row >= mapa.length || col >= mapa[row].length) {
+            return false;
+        }
+        return mapa[row][col] != 0;
     }
 }

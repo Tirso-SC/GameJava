@@ -15,25 +15,27 @@ public class Jugador extends CharacterEntity {
     private static final double MAX_FALL_SPEED = 14.0;
     private static final int JUMP_TAKEOFF_FRAME = 2;
     private static final int JUMP_LANDING_FRAME = 8;
-    private static final int SPRITE_OFFSET_X = -27;
+    private static final int SPRITE_OFFSET_X = 0;
 
     private boolean jumping;
     private boolean attacking;
-    
-    private boolean jumpStarted;
-    private boolean landingCompleted;
     private boolean previousJumpPressed;
     private boolean previousAttackPressed;
     private double verticalSpeed;
     private double yFloat;
-    private int groundY;
+    private boolean onGround;
     private int worldX;
+    private int hitboxSize;
+    private int hitboxWidth;
+    private int hitboxHeight;
+    private int hitboxOffsetX;
+    private int hitboxOffsetY;
 
     public Jugador(int size) {
         super(DEFAULT_X, DEFAULT_Y, size, size, DEFAULT_SPEED);
         this.worldX = DEFAULT_X;
         this.yFloat = y;
-        this.groundY = y;
+        this.onGround = false;
         loadAnimations();
     }
 
@@ -55,28 +57,74 @@ public class Jugador extends CharacterEntity {
     @Override
     public void update(ContextoJuego context) {
         KeyHandler keys = context.getKeyHandler();
+        Tilemanager tiles = context.getTileManager();
 
-        updateHorizontalMovement(keys);
+        ensureHitbox(tiles);
+
+        updateHorizontalMovement(keys, tiles);
         updateJumpInput(keys);
         updateAttackInput(keys);
-        updateVerticalPhysics(context.getScreenHeight());
+        updateVerticalPhysics(context.getScreenHeight(), tiles);
         updateAnimationState(keys);
         animationController.update();
     }
 
-    private void updateHorizontalMovement(KeyHandler keys) {
-        if (keys.leftPressed) {
-            worldX -= speed;
-            facingRight = false;
-        }
-        if (keys.rightPressed) {
-            worldX += speed;
-            facingRight = true;
+    private void updateHorizontalMovement(KeyHandler keys, Tilemanager tiles) {
+        if (tiles == null) {
+            return;
         }
 
-        if (worldX < 0) {
-            worldX = 0;
+        int dx = 0;
+
+        if (keys.leftPressed) {
+            dx -= speed;
         }
+        if (keys.rightPressed) {
+            dx += speed;
+        }
+
+        if (dx == 0) {
+            return;
+        }
+
+        facingRight = dx > 0;
+
+        int boxLeft = worldX + hitboxOffsetX;
+        int boxRight = boxLeft + hitboxWidth - 1;
+        int boxTop = y + hitboxOffsetY;
+        int boxBottom = boxTop + hitboxHeight - 1;
+        int topRow = tiles.worldToRow(boxTop);
+        int bottomRow = tiles.worldToRow(boxBottom);
+
+        if (dx < 0) {
+            int newBoxLeft = boxLeft + dx;
+            int col = tiles.worldToCol(newBoxLeft);
+            if (hasSolidInColumn(tiles, col, topRow, bottomRow)) {
+                int tileRight = col * tiles.getTileSize() + tiles.getTileSize();
+                int resolvedBoxLeft = tileRight;
+                worldX = resolvedBoxLeft - hitboxOffsetX;
+                if (verticalSpeed < 0) {
+                    verticalSpeed = 0;
+                }
+            } else {
+                worldX += dx;
+            }
+        } else {
+            int newBoxRight = boxRight + dx;
+            int col = tiles.worldToCol(newBoxRight);
+            if (hasSolidInColumn(tiles, col, topRow, bottomRow)) {
+                int tileLeft = col * tiles.getTileSize();
+                int resolvedBoxLeft = tileLeft - hitboxWidth;
+                worldX = resolvedBoxLeft - hitboxOffsetX;
+                if (verticalSpeed < 0) {
+                    verticalSpeed = 0;
+                }
+            } else {
+                worldX += dx;
+            }
+        }
+
+        clampWorldX(tiles);
     }
     private void updateAttackInput(KeyHandler keys) {
         boolean attackPressed = keys.iPressed;
@@ -95,49 +143,87 @@ public class Jugador extends CharacterEntity {
     private void updateJumpInput(KeyHandler keys) {
         boolean jumpPressed = keys.upPressed;
 
-        if (jumpPressed && !previousJumpPressed && !jumping) {
+        if (jumpPressed && !previousJumpPressed && onGround) {
+            onGround = false;
             jumping = true;
-            jumpStarted = false;
-            landingCompleted = false;
-            verticalSpeed = 0;
-            yFloat = groundY;
+            verticalSpeed = JUMP_START_VELOCITY;
+            yFloat = y;
             play(EstadoAnimacion.JUMP);
         }
 
         previousJumpPressed = jumpPressed;
     }
 
-    private void updateVerticalPhysics(int screenHeight) {
-        if (!jumping) {
-            groundY = Math.min(groundY, screenHeight - height);
-            y = groundY;
-            yFloat = y;
+    private void updateVerticalPhysics(int screenHeight, Tilemanager tiles) {
+        if (tiles == null) {
             return;
         }
 
-        if (!jumpStarted && !landingCompleted && getAnimationFrameIndex() >= JUMP_TAKEOFF_FRAME) {
-            jumpStarted = true;
-            verticalSpeed = JUMP_START_VELOCITY;
+        if (!onGround) {
+            verticalSpeed += GRAVITY;
+            if (verticalSpeed > MAX_FALL_SPEED) {
+                verticalSpeed = MAX_FALL_SPEED;
+            }
         }
 
-        if (!jumpStarted) {
-            y = groundY;
-            yFloat = y;
-            return;
+        double newY = yFloat + verticalSpeed;
+        int boxLeft = worldX + hitboxOffsetX;
+        int boxRight = boxLeft + hitboxWidth - 1;
+        int leftCol = tiles.worldToCol(boxLeft);
+        int rightCol = tiles.worldToCol(boxRight);
+
+        if (verticalSpeed < 0) {
+            int newBoxTop = (int) Math.floor(newY) + hitboxOffsetY;
+            int row = tiles.worldToRow(newBoxTop);
+
+            if (hasSolidInRow(tiles, row, leftCol, rightCol)) {
+                int tileBottom = (row + 1) * tiles.getTileSize();
+                int resolvedBoxTop = tileBottom;
+                yFloat = resolvedBoxTop - hitboxOffsetY;
+                verticalSpeed = 0;
+                onGround = false;
+                jumping = true;
+            } else {
+                yFloat = newY;
+                onGround = false;
+                jumping = true;
+            }
+        } else if (verticalSpeed > 0) {
+            int newBoxBottom = (int) Math.floor(newY) + hitboxOffsetY + hitboxHeight - 1;
+            int row = tiles.worldToRow(newBoxBottom);
+
+            if (hasSolidInRow(tiles, row, leftCol, rightCol)) {
+                int tileTop = row * tiles.getTileSize();
+                int resolvedBoxBottom = tileTop - 1;
+                int resolvedBoxTop = resolvedBoxBottom - hitboxHeight + 1;
+                yFloat = resolvedBoxTop - hitboxOffsetY;
+                verticalSpeed = 0;
+                onGround = true;
+                jumping = false;
+            } else {
+                yFloat = newY;
+                onGround = false;
+                jumping = true;
+            }
+        } else {
+            int belowY = (int) Math.floor(yFloat) + hitboxOffsetY + hitboxHeight;
+            int row = tiles.worldToRow(belowY);
+
+            if (hasSolidInRow(tiles, row, leftCol, rightCol)) {
+                onGround = true;
+                jumping = false;
+            } else {
+                onGround = false;
+                jumping = true;
+            }
         }
 
-        yFloat += verticalSpeed;
-        verticalSpeed += GRAVITY;
-
-        if (verticalSpeed > MAX_FALL_SPEED) {
-            verticalSpeed = MAX_FALL_SPEED;
-        }
-
-        if (yFloat >= groundY) {
-            yFloat = groundY;
+        int maxY = screenHeight - height;
+        if (yFloat > maxY) {
+            yFloat = maxY;
             verticalSpeed = 0;
-            jumpStarted = false;
-            landingCompleted = true;
+            onGround = true;
+            jumping = false;
         }
 
         y = (int) Math.round(yFloat);
@@ -148,13 +234,6 @@ public class Jugador extends CharacterEntity {
 
         if (jumping) {
             play(EstadoAnimacion.JUMP);
-
-            boolean onGround = y >= groundY;
-            boolean landingPoseReached = getAnimationFrameIndex() >= JUMP_LANDING_FRAME;
-            if (landingCompleted && onGround && landingPoseReached && isCurrentAnimationFinished()) {
-                jumping = false;
-                landingCompleted = false;
-            }
             return;
         }
 
@@ -180,5 +259,69 @@ public class Jugador extends CharacterEntity {
     public void updateScreenPosition(int cameraX, int screenWidth) {
         x = worldX - cameraX;
         clampHorizontal(screenWidth);
+    }
+
+    private void clampWorldX(Tilemanager tiles) {
+        if (worldX < 0) {
+            worldX = 0;
+        }
+
+        if (tiles == null) {
+            return;
+        }
+
+        if (hitboxWidth > 0) {
+            int maxX = tiles.getMapPixelWidth() - hitboxWidth - hitboxOffsetX;
+            if (maxX >= 0 && worldX > maxX) {
+                worldX = maxX;
+            }
+        }
+    }
+
+    private boolean hasSolidInColumn(Tilemanager tiles, int col, int startRow, int endRow) {
+        if (tiles == null) {
+            return false;
+        }
+        int from = Math.min(startRow, endRow);
+        int to = Math.max(startRow, endRow);
+        for (int row = from; row <= to; row++) {
+            if (tiles.isSolidTile(row, col)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasSolidInRow(Tilemanager tiles, int row, int startCol, int endCol) {
+        if (tiles == null) {
+            return false;
+        }
+        int from = Math.min(startCol, endCol);
+        int to = Math.max(startCol, endCol);
+        for (int col = from; col <= to; col++) {
+            if (tiles.isSolidTile(row, col)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void ensureHitbox(Tilemanager tiles) {
+        if (tiles == null) {
+            return;
+        }
+        int size = tiles.getTileSize();
+        if (size <= 0) {
+            return;
+        }
+        if (hitboxSize == size && hitboxWidth > 0) {
+            return;
+        }
+
+        hitboxSize = size;
+        hitboxWidth = size;
+        hitboxHeight = size;
+        hitboxOffsetX = (width - hitboxWidth) / 2;
+        hitboxOffsetY = height - hitboxHeight;
     }
 }
