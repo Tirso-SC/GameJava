@@ -319,7 +319,7 @@ public class Jugador extends CharacterEntity {
         }
 
         hitboxSize = size;
-        hitboxWidth = size;
+        hitboxWidth = Math.max(1, (int) Math.round(size * 0.75));
         hitboxHeight = size;
         hitboxOffsetX = (width - hitboxWidth) / 2;
         hitboxOffsetY = height - hitboxHeight;
