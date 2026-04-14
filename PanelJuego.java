@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
@@ -88,7 +89,7 @@ public class PanelJuego extends JPanel implements Runnable {
 
         for (Enemigo enemigo : enemigos) {
             if (zonaAtaque.intersects(enemigo.getHitbox())) {
-                enemigo.recibirDaño(1);
+                enemigo.recibirDaño(jugador.getDañoAtaque());
                 jugador.marcarGolpe();
                 break;
             }

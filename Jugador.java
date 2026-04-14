@@ -17,13 +17,17 @@ public class Jugador extends Entidad {
     boolean enSuelo;
     boolean miraDerecha;
     boolean atacando;
+    boolean ataqueFuerteActivo;
     boolean golpeAplicado;
+    boolean ataquePresionadoAntes;
+    boolean ataqueFuertePresionadoAntes;
 
     // Animaciones
     Animacion animIdle;
     Animacion animCaminar;
     Animacion animSalto;
     Animacion animAtaque;
+    Animacion animAtaqueFuerte;
     Animacion animActual;
 
     // Carpeta de sprites del jugador
@@ -41,7 +45,8 @@ public class Jugador extends Entidad {
         animIdle    = new Animacion(DIR + "Idle.png",     5, true);
         animCaminar = new Animacion(DIR + "Walk.png",     5, true);
         animSalto   = new Animacion(DIR + "Jump.png",     5, false);
-        animAtaque  = new Animacion(DIR + "Attack_1.png", 5, false);
+        animAtaque  = new Animacion(DIR + "Attack_1.png", 4, false);
+        animAtaqueFuerte = new Animacion(DIR + "Attack_2.png", 4, false);
         animActual  = animIdle;
     }
 
@@ -56,6 +61,9 @@ public class Jugador extends Entidad {
         boolean derecha   = panel.isTeclaPresionada(KeyEvent.VK_D);
         boolean salto     = panel.isTeclaPresionada(KeyEvent.VK_W);
         boolean ataque    = panel.isTeclaPresionada(KeyEvent.VK_I);
+        boolean ataqueFuerte = panel.isTeclaPresionada(KeyEvent.VK_O);
+        boolean inicioAtaqueNormal = ataque && !ataquePresionadoAntes;
+        boolean inicioAtaqueFuerte = ataqueFuerte && !ataqueFuertePresionadoAntes;
 
         int dx = 0;
 
@@ -77,13 +85,22 @@ public class Jugador extends Entidad {
         }
 
         // Ataque
-        if (ataque && !atacando) {
+        if (inicioAtaqueFuerte && !atacando) {
             atacando      = true;
+            ataqueFuerteActivo = true;
+            golpeAplicado = false;
+            animAtaqueFuerte.reiniciar();
+        } else if (inicioAtaqueNormal && !atacando) {
+            atacando      = true;
+            ataqueFuerteActivo = false;
             golpeAplicado = false;
             animAtaque.reiniciar();
         }
-        if (atacando && animAtaque.haTerminado()) {
-            atacando = false;
+        if (atacando) {
+            boolean finAtaque = ataqueFuerteActivo ? animAtaqueFuerte.haTerminado() : animAtaque.haTerminado();
+            if (finAtaque) {
+                atacando = false;
+            }
         }
 
         // Gravedad
@@ -103,7 +120,7 @@ public class Jugador extends Entidad {
 
         // Actualizar qué animación toca
         if (atacando) {
-            animActual = animAtaque;
+            animActual = ataqueFuerteActivo ? animAtaqueFuerte : animAtaque;
         } else if (!enSuelo) {
             animActual = animSalto;
         } else if (izquierda || derecha) {
@@ -111,6 +128,9 @@ public class Jugador extends Entidad {
         } else {
             animActual = animIdle;
         }
+
+        ataquePresionadoAntes = ataque;
+        ataqueFuertePresionadoAntes = ataqueFuerte;
     }
 
     private int hitboxOffsetX() {
@@ -193,8 +213,19 @@ public class Jugador extends Entidad {
     // Zona de ataque delante del jugador (para detectar golpes a enemigos)
     public Rectangle getZonaAtaque() {
         if (!atacando || golpeAplicado) return null;
-        int ax = miraDerecha ? mundoX + ancho : mundoX - ancho / 2;
-        return new Rectangle(ax, y + alto / 4, ancho / 2, alto / 2);
+
+        int centroX = mundoX + ancho / 2;
+        int ataqueAncho = ataqueFuerteActivo ? (ancho * 3) / 4 : ancho / 2;
+        int ataqueAlto = ataqueFuerteActivo ? (alto * 2) / 3 : (alto * 3) / 5;
+
+        int ax = miraDerecha ? centroX : centroX - ataqueAncho;
+        int ay = ataqueFuerteActivo ? y + alto / 4 : y + alto / 3;
+
+        return new Rectangle(ax, ay, ataqueAncho, ataqueAlto);
+    }
+
+    public int getDañoAtaque() {
+        return ataqueFuerteActivo ? 2 : 1;
     }
 
     // Hitbox reducida (más ajustada que el sprite completo)
