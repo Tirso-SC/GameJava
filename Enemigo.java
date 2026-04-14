@@ -25,6 +25,7 @@ public class Enemigo extends Entidad {
     int vida;
 
     Animacion animCaminar;
+    Animacion animIdle;
     Animacion animHerido;
     Animacion animMuerto;
     Animacion animAtacar;
@@ -46,11 +47,12 @@ public class Enemigo extends Entidad {
     }
 
     private void cargarAnimaciones() {
+        animIdle = new Animacion(DIR + "Idle.png", 8, true);
         animCaminar = new Animacion(DIR + "Run.png", 6, true);
         animHerido = new Animacion(DIR + "Hurt12.png", 10, false);
         animMuerto = new Animacion(DIR + "Dead.png", 6, false);
         animAtacar = new Animacion(DIR + "Attack_2.png", 6, false);
-        animActual = animCaminar;
+        animActual = animIdle;
     }
 
     @Override
@@ -69,7 +71,7 @@ public class Enemigo extends Entidad {
             animHerido.actualizar();
             if (animHerido.haTerminado()) {
                 herido = false;
-                animActual = animCaminar;
+                animActual = animIdle;
             }
             return;
         }
@@ -90,7 +92,7 @@ public class Enemigo extends Entidad {
 
     private void decidir(Mapa mapa, Jugador jugador) {
         if (jugador == null) {
-            patrullar(mapa);
+            quedarseIdle();
             return;
         }
 
@@ -123,21 +125,11 @@ public class Enemigo extends Entidad {
             return;
         }
 
-        patrullar(mapa);
+        quedarseIdle();
     }
 
-    private void patrullar(Mapa mapa) {
-        if (enSuelo && puedeAvanzar(mapa, miraDerecha)) {
-            if (miraDerecha) {
-                mundoX += VX;
-            } else {
-                mundoX -= VX;
-            }
-        } else if (enSuelo) {
-            miraDerecha = !miraDerecha;
-        }
-
-        animActual = animCaminar;
+    private void quedarseIdle() {
+        animActual = animIdle;
     }
 
     private void iniciarAtaque() {
@@ -160,7 +152,7 @@ public class Enemigo extends Entidad {
 
         if (animAtacar.haTerminado()) {
             atacando = false;
-            animActual = animCaminar;
+            animActual = animIdle;
         }
     }
 

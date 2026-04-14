@@ -97,6 +97,7 @@ public class PanelJuego extends JPanel implements Runnable {
     private void actualizarCamara() {
         int zonaMuerta    = ANCHO / 3;
         int jugadorPantalla = jugador.mundoX - camaraX;
+        int camaraMaxX = mapa.getAnchoPíxeles() - ANCHO;
 
         if (jugadorPantalla < zonaMuerta) {
             camaraX = jugador.mundoX - zonaMuerta;
@@ -105,6 +106,8 @@ public class PanelJuego extends JPanel implements Runnable {
             camaraX = jugador.mundoX - (ANCHO - zonaMuerta);
         }
         if (camaraX < 0) camaraX = 0;
+        if (camaraMaxX < 0) camaraMaxX = 0;
+        if (camaraX > camaraMaxX) camaraX = camaraMaxX;
     }
 
     @Override
