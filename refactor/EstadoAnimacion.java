@@ -3,5 +3,6 @@ public enum EstadoAnimacion {
     WALK,
     JUMP,
     ATTACK,
-    DEAD
+    DEAD,
+    HURT
 }

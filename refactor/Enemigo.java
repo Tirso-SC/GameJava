@@ -1,7 +1,7 @@
 import java.awt.Rectangle;
 
 public class Enemigo extends CharacterEntity {
-    private static final int ANIMATION_SPEED = 6;
+    private static final int ANIMATION_SPEED = 10;
     private static final double GRAVITY = 0.70;
     private static final double MAX_FALL_SPEED = 14.0;
     private static final int MAX_HEALTH = 2;
@@ -11,6 +11,7 @@ public class Enemigo extends CharacterEntity {
     private static final String IDLE_PATH = SPRITES_DIR + "/Idle.png";
     private static final String RUN_PATH = SPRITES_DIR + "/Run.png";
     private static final String DEAD_PATH = SPRITES_DIR + "/Dead.png";
+    private static final String HURT_PATH = SPRITES_DIR + "/Hurt.png";
 
     private int worldX;
     private double yFloat;
@@ -19,6 +20,7 @@ public class Enemigo extends CharacterEntity {
     private boolean movingRight = true;
     private int health = MAX_HEALTH;
     private boolean dead;
+    private boolean hurting;
     private int hitboxSize;
     private int hitboxWidth;
     private int hitboxHeight;
@@ -36,6 +38,7 @@ public class Enemigo extends CharacterEntity {
         Animacion idle = CargadorHojasSprites.loadAnimation(IDLE_PATH, ANIMATION_SPEED, true);
         Animacion run = CargadorHojasSprites.loadAnimation(RUN_PATH, ANIMATION_SPEED, true);
         Animacion deadAnim = CargadorHojasSprites.loadAnimation(DEAD_PATH, ANIMATION_SPEED, false);
+        Animacion hurtAnim = CargadorHojasSprites.loadAnimation(HURT_PATH, ANIMATION_SPEED, false);
         if (idle != null) {
             animationController.add(EstadoAnimacion.IDLE, idle);
         }
@@ -44,6 +47,9 @@ public class Enemigo extends CharacterEntity {
         }
         if (deadAnim != null) {
             animationController.add(EstadoAnimacion.DEAD, deadAnim);
+        }
+        if (hurtAnim != null) {
+            animationController.add(EstadoAnimacion.HURT, hurtAnim);
         }
         play(EstadoAnimacion.IDLE);
     }
@@ -59,8 +65,18 @@ public class Enemigo extends CharacterEntity {
         Tilemanager tiles = context.getTileManager();
 
         ensureHitbox(tiles);
-        boolean moved = updateHorizontalMovement(tiles);
         updateVerticalPhysics(context.getScreenHeight(), tiles);
+
+        if (hurting) {
+            play(EstadoAnimacion.HURT);
+            animationController.update();
+            if (isCurrentAnimationFinished()) {
+                hurting = false;
+            }
+            return;
+        }
+
+        boolean moved = updateHorizontalMovement(tiles);
 
         if (moved) {
             play(EstadoAnimacion.WALK);
@@ -199,11 +215,19 @@ public class Enemigo extends CharacterEntity {
         if (health <= 0) {
             dead = true;
             play(EstadoAnimacion.DEAD);
+            hurting = false;
+        } else {
+            hurting = true;
+            play(EstadoAnimacion.HURT);
         }
     }
 
     public boolean isDeadAnimationFinished() {
         return dead && isCurrentAnimationFinished();
+    }
+
+    public boolean isDead() {
+        return dead;
     }
 
     private void clampWorldX(Tilemanager tiles) {

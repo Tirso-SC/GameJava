@@ -11,19 +11,23 @@ public class Jugador extends CharacterEntity {
     private static final String WALK_PATH = SPRITES_DIR + "/Walk.png";
     private static final String ATTACK_PATH = SPRITES_DIR + "/Attack_1.png";
     private static final String JUMP_PATH = SPRITES_DIR + "/Jump.png";
+    private static final String HURT_PATH = SPRITES_DIR + "/Hurt.png";
 
     private static final double JUMP_START_VELOCITY = -14.0;
     private static final double GRAVITY = 0.70;
     private static final double MAX_FALL_SPEED = 14.0;
+    private static final int HURT_COOLDOWN_FRAMES = 20;
     private static final int IDLE_SPRITE_OFFSET_X_LEFT = -40;
     private static final int IDLE_SPRITE_OFFSET_X_RIGHT = 40;
     private static final int IDLE_SPRITE_OFFSET_Y = 0;
 
     private boolean jumping;
     private boolean attacking;
+    private boolean hurting;
     private boolean previousJumpPressed;
     private boolean previousAttackPressed;
     private boolean attackHitApplied;
+    private int hurtCooldown;
     private double verticalSpeed;
     private double yFloat;
     private boolean onGround;
@@ -47,6 +51,7 @@ public class Jugador extends CharacterEntity {
         Animacion walk = CargadorHojasSprites.loadAnimation(WALK_PATH, ANIMATION_SPEED, true);
         Animacion attack = CargadorHojasSprites.loadAnimation(ATTACK_PATH, ANIMATION_SPEED, false);
         Animacion jump = CargadorHojasSprites.loadAnimation(JUMP_PATH, ANIMATION_SPEED, false);
+        Animacion hurt = CargadorHojasSprites.loadAnimation(HURT_PATH, ANIMATION_SPEED, false);
 
         if (idle != null) {
             animationController.add(EstadoAnimacion.IDLE, idle);
@@ -60,6 +65,9 @@ public class Jugador extends CharacterEntity {
         if (jump != null) {
             animationController.add(EstadoAnimacion.JUMP, jump);
         }
+        if (hurt != null) {
+            animationController.add(EstadoAnimacion.HURT, hurt);
+        }
         play(EstadoAnimacion.IDLE);
     }
 
@@ -70,10 +78,14 @@ public class Jugador extends CharacterEntity {
 
         ensureHitbox(tiles);
 
+        if (hurtCooldown > 0) {
+            hurtCooldown--;
+        }
+
         updateHorizontalMovement(keys, tiles);
 
         boolean jumpPressed = keys.upPressed;
-        if (jumpPressed && !previousJumpPressed && onGround) {
+        if (!hurting && jumpPressed && !previousJumpPressed && onGround) {
             onGround = false;
             jumping = true;
             verticalSpeed = JUMP_START_VELOCITY;
@@ -83,7 +95,7 @@ public class Jugador extends CharacterEntity {
         previousJumpPressed = jumpPressed;
 
         boolean attackPressed = keys.iPressed;
-        if (attackPressed && !previousAttackPressed && !jumping && !attacking) {
+        if (!hurting && attackPressed && !previousAttackPressed && !jumping && !attacking) {
             attacking = true;
             attackHitApplied = false;
             play(EstadoAnimacion.ATTACK);
@@ -95,10 +107,16 @@ public class Jugador extends CharacterEntity {
             attackHitApplied = false;
         }
 
+        if (hurting && isCurrentAnimationFinished()) {
+            hurting = false;
+        }
+
         updateVerticalPhysics(context.getScreenHeight(), tiles);
 
         boolean moving = keys.leftPressed || keys.rightPressed;
-        if (jumping) {
+        if (hurting) {
+            play(EstadoAnimacion.HURT);
+        } else if (jumping) {
             play(EstadoAnimacion.JUMP);
         } else if (attacking) {
             play(EstadoAnimacion.ATTACK);
@@ -258,6 +276,18 @@ public class Jugador extends CharacterEntity {
 
     public void markAttackHit() {
         attackHitApplied = true;
+    }
+
+    public void applyDamage(int amount) {
+        if (amount <= 0 || hurtCooldown > 0) {
+            return;
+        }
+
+        hurting = true;
+        hurtCooldown = HURT_COOLDOWN_FRAMES;
+        attacking = false;
+        attackHitApplied = false;
+        play(EstadoAnimacion.HURT);
     }
 
     public Rectangle getAttackBounds() {

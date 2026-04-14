@@ -82,6 +82,7 @@ public class GamePanel extends JPanel implements Runnable {
         }
         removeDeadEnemies();
         handleAttacks();
+        handlePlayerDamage();
         updateCamera();
         player.updateScreenPosition(cameraX, screenWidth);
         for (Enemigo enemy : enemies) {
@@ -118,6 +119,23 @@ public class GamePanel extends JPanel implements Runnable {
             Enemigo enemy = iterator.next();
             if (enemy.isDeadAnimationFinished()) {
                 iterator.remove();
+            }
+        }
+    }
+
+    private void handlePlayerDamage() {
+        Rectangle playerBox = player.getHitboxBounds();
+        if (playerBox == null) {
+            return;
+        }
+
+        for (Enemigo enemy : enemies) {
+            if (enemy.isDead()) {
+                continue;
+            }
+            if (playerBox.intersects(enemy.getHitboxBounds())) {
+                player.applyDamage(1);
+                break;
             }
         }
     }
