@@ -19,6 +19,7 @@ public class PanelJuego extends JPanel implements Runnable {
     private ArrayList<Enemigo> enemigos;
     private Mapa              mapa;
     private Fondo             fondo;
+    private ArrayList<ObjetoEstatico> decoraciones;
     private int               camaraX;
 
     private HashMap<Integer, Boolean> teclasPresionadas = new HashMap<>();
@@ -33,6 +34,14 @@ public class PanelJuego extends JPanel implements Runnable {
     private void inicializar() {
         mapa  = new Mapa(TAMAÑO_TILE);
         fondo = new Fondo(ANCHO, LARGO);
+
+        decoraciones = new ArrayList<>();
+        // Situamos el árbol. El suelo está en la fila 7 (y = 7 * TAMAÑO_TILE = 672).
+        // Si le damos tamaño alto=250, lo ponemos en y = 672 - 250 = 422 para que toque el suelo.
+        decoraciones.add(new ObjetoEstatico(
+            "Assets/Background/GandalfHardcore FREE Platformer Assets/Willow2.png",
+            400, 170, 500, 500
+        ));
 
         int tamañoJugador = TAMAÑO_TILE * 2;
         jugador = new Jugador(100, LARGO - tamañoJugador * 2, tamañoJugador);
@@ -103,6 +112,11 @@ public class PanelJuego extends JPanel implements Runnable {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         fondo.pintar(g, camaraX);
+        
+        for (ObjetoEstatico decoracion : decoraciones) {
+            decoracion.pintar(g, camaraX);
+        }
+        
         mapa.pintar(g, camaraX);
         for (Enemigo enemigo : enemigos) {
             enemigo.pintar(g, camaraX);
