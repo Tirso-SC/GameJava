@@ -25,6 +25,22 @@ public abstract class Entidad {
         return new Rectangle(mundoX, y, ancho, alto);
     }
 
+    public int getX() {
+        return mundoX;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public int getAncho() {
+        return ancho;
+    }
+
+    public int getAlto() {
+        return alto;
+    }
+
     public abstract void actualizar(PanelJuego panel);
     public abstract void pintar(Graphics g, int camaraX);
 }

@@ -1,8 +1,6 @@
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import javax.swing.JPanel;
@@ -136,5 +134,9 @@ public class PanelJuego extends JPanel implements Runnable {
 
     public Mapa getMapa() {
         return mapa;
+    }
+
+    public Jugador getJugador() {
+        return jugador;
     }
 }

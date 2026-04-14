@@ -11,6 +11,7 @@ public class Jugador extends Entidad {
     final double VELOCIDAD_SALTO  = -14.0;
     final double GRAVEDAD         = 0.70;
     final double VY_MAX           = 14.0;
+    final int VIDA_INICIAL        = 5;
 
     // Estado
     double  vy;
@@ -21,6 +22,8 @@ public class Jugador extends Entidad {
     boolean golpeAplicado;
     boolean ataquePresionadoAntes;
     boolean ataqueFuertePresionadoAntes;
+    boolean muerto;
+    int vida;
 
     // Animaciones
     Animacion animIdle;
@@ -28,6 +31,7 @@ public class Jugador extends Entidad {
     Animacion animSalto;
     Animacion animAtaque;
     Animacion animAtaqueFuerte;
+    Animacion animMuerto;
     Animacion animActual;
 
     // Carpeta de sprites del jugador
@@ -38,6 +42,8 @@ public class Jugador extends Entidad {
         this.vy          = 0;
         this.enSuelo     = false;
         this.miraDerecha = true;
+        this.vida        = VIDA_INICIAL;
+        this.muerto      = false;
         cargarAnimaciones();
     }
 
@@ -47,11 +53,19 @@ public class Jugador extends Entidad {
         animSalto   = new Animacion(DIR + "Jump.png",     5, false);
         animAtaque  = new Animacion(DIR + "Attack_1.png", 4, false);
         animAtaqueFuerte = new Animacion(DIR + "Attack_2.png", 4, false);
+        animMuerto       = new Animacion(DIR + "Dead.png", 6, false);
         animActual  = animIdle;
     }
 
     @Override
     public void actualizar(PanelJuego panel) {
+        if (muerto) {
+            animActual = animMuerto;
+            if (!animMuerto.haTerminado()) {
+                animMuerto.actualizar();
+            }
+            return;
+        }
         mover(panel);
         animActual.actualizar();
     }
@@ -212,7 +226,7 @@ public class Jugador extends Entidad {
 
     // Zona de ataque delante del jugador (para detectar golpes a enemigos)
     public Rectangle getZonaAtaque() {
-        if (!atacando || golpeAplicado) return null;
+        if (muerto || !atacando || golpeAplicado) return null;
 
         int centroX = mundoX + ancho / 2;
         int ataqueAncho = ataqueFuerteActivo ? (ancho * 3) / 4 : ancho / 2;
@@ -235,6 +249,31 @@ public class Jugador extends Entidad {
 
     public void marcarGolpe() {
         golpeAplicado = true;
+    }
+
+    public void recibirDaño(int daño) {
+        if (muerto) {
+            return;
+        }
+
+        vida -= daño;
+        if (vida <= 0) {
+            vida = 0;
+            muerto = true;
+            atacando = false;
+            ataqueFuerteActivo = false;
+            golpeAplicado = true;
+            animMuerto.reiniciar();
+            animActual = animMuerto;
+        }
+    }
+
+    public int getVida() {
+        return vida;
+    }
+
+    public boolean estaMuerto() {
+        return muerto;
     }
 
     @Override

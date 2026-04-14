@@ -68,4 +68,8 @@ public class Animacion {
     public boolean haTerminado() {
         return !bucle && frameActual >= frames.length - 1;
     }
+
+    public int getFrameActual() {
+        return frameActual;
+    }
 }
