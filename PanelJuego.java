@@ -47,8 +47,9 @@ public class PanelJuego extends JPanel implements Runnable {
 
         enemigos = new ArrayList<>();
         int tamañoEnemigo = (int)(TAMAÑO_TILE * 1.5);
-        enemigos.add(new Enemigo(TAMAÑO_TILE * 5,  LARGO - tamañoEnemigo * 2, tamañoEnemigo));
-        enemigos.add(new Enemigo(TAMAÑO_TILE * 10, LARGO - tamañoEnemigo * 2, tamañoEnemigo));
+        enemigos.add(new EnemigoBasico(TAMAÑO_TILE * 5,  384, tamañoEnemigo));
+        enemigos.add(new EnemigoBasico(TAMAÑO_TILE * 10, 384, tamañoEnemigo));
+        enemigos.add(new EnemigoJefe(   TAMAÑO_TILE * 45, 384, tamañoEnemigo * 2));
 
         camaraX = 0;
     }

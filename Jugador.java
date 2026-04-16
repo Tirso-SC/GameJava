@@ -45,6 +45,8 @@ public class Jugador extends Entidad {
         this.vida        = VIDA_INICIAL;
         this.muerto      = false;
         cargarAnimaciones();
+        System.out.println("player creado en x=" + mundoX + ", y=" + y + ", tamaño=" + tamaño);
+
     }
 
     private void cargarAnimaciones() {
