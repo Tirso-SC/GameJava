@@ -1,7 +1,5 @@
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Rectangle;
-import java.util.ArrayList;
 import java.util.HashMap;
 import javax.swing.JPanel;
 
@@ -13,13 +11,8 @@ public class PanelJuego extends JPanel implements Runnable {
     final int LARGO       = TAMAÑO_TILE * 8;  // 768
     final int FPS         = 60;
     final int FRAME_TIME  = 1000 / FPS;
-
-    private Jugador           jugador;
-    private ArrayList<Enemigo> enemigos;
-    private Mapa              mapa;
-    private Fondo             fondo;
-    private ArrayList<ObjetoEstatico> decoraciones;
-    private int               camaraX;
+    private Jugador jugador;
+    private Nivel   nivelActual;
 
     private HashMap<Integer, Boolean> teclasPresionadas = new HashMap<>();
 
@@ -31,27 +24,11 @@ public class PanelJuego extends JPanel implements Runnable {
     }
 
     private void inicializar() {
-        mapa  = new Mapa(TAMAÑO_TILE);
-        fondo = new Fondo(ANCHO, LARGO);
-
-        decoraciones = new ArrayList<>();
-        // Situamos el árbol. El suelo está en la fila 7 (y = 7 * TAMAÑO_TILE = 672).
-        // Si le damos tamaño alto=250, lo ponemos en y = 672 - 250 = 422 para que toque el suelo.
-        decoraciones.add(new ObjetoEstatico(
-            "Assets/Background/GandalfHardcore FREE Platformer Assets/Willow2.png",
-            400, 170, 500, 500
-        ));
-
+        nivelActual = new Nivel1();
+        nivelActual.inicializar(TAMAÑO_TILE);
+        
         int tamañoJugador = TAMAÑO_TILE * 2;
         jugador = new Jugador(100, LARGO - tamañoJugador * 2, tamañoJugador);
-
-        enemigos = new ArrayList<>();
-        int tamañoEnemigo = (int)(TAMAÑO_TILE * 1.5);
-        enemigos.add(new EnemigoBasico(TAMAÑO_TILE * 5,  384, tamañoEnemigo));
-        enemigos.add(new EnemigoBasico(TAMAÑO_TILE * 10, 384, tamañoEnemigo));
-        enemigos.add(new EnemigoJefe(   TAMAÑO_TILE * 45, 384, tamañoEnemigo * 2));
-
-        camaraX = 0;
     }
 
     @Override
@@ -68,63 +45,39 @@ public class PanelJuego extends JPanel implements Runnable {
     }
 
     private void actualizarEstado() {
+        if (nivelActual instanceof Nivel1 && nivelActual.comprobarVictoria()) {
+            if (jugador.mundoX < TAMAÑO_TILE * 45) {
+                jugador.mundoX += 2; // velocidad de la transicion
+                jugador.miraDerecha = true;
+                jugador.animActual = jugador.animCaminar;
+                jugador.animActual.actualizar();
+                nivelActual.actualizar(this);
+                return;
+            }
+            if (jugador.y <200) {
+                jugador.y += 2; // velocidad de la transicion
+                jugador.animActual = jugador.animEntrarNivel;
+                jugador.animActual.actualizar();
+                nivelActual.actualizar(this);
+                return;
+            }
+
+            jugador.animActual = jugador.animIdle;
+            cambiarNivel(new Nivel2());
+            jugador.mundoX = 100;
+            jugador.y = LARGO - TAMAÑO_TILE * 4;
+            return;
+        }
+
         jugador.actualizar(this);
-
-        // Actualizar enemigos y eliminar los que ya han terminado su animación de muerte
-        for (int i = enemigos.size() - 1; i >= 0; i--) {
-            enemigos.get(i).actualizar(this);
-            if (enemigos.get(i).estaEliminado()) {
-                enemigos.remove(i);
-            }
-        }
-
-        checkeaAtaques();
-        actualizarCamara();
-    }
-
-    private void checkeaAtaques() {
-        Rectangle zonaAtaque = jugador.getZonaAtaque();
-        if (zonaAtaque == null) return;
-
-        for (Enemigo enemigo : enemigos) {
-            if (zonaAtaque.intersects(enemigo.getHitbox())) {
-                enemigo.recibirDaño(jugador.getDañoAtaque());
-                jugador.marcarGolpe();
-                break;
-            }
-        }
-    }
-
-    private void actualizarCamara() {
-        int zonaMuerta    = ANCHO / 3;
-        int jugadorPantalla = jugador.mundoX - camaraX;
-        int camaraMaxX = mapa.getAnchoPíxeles() - ANCHO;
-
-        if (jugadorPantalla < zonaMuerta) {
-            camaraX = jugador.mundoX - zonaMuerta;
-        }
-        if (jugadorPantalla > ANCHO - zonaMuerta) {
-            camaraX = jugador.mundoX - (ANCHO - zonaMuerta);
-        }
-        if (camaraX < 0) camaraX = 0;
-        if (camaraMaxX < 0) camaraMaxX = 0;
-        if (camaraX > camaraMaxX) camaraX = camaraMaxX;
+        nivelActual.actualizar(this);
     }
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        fondo.pintar(g, camaraX);
-        
-        for (ObjetoEstatico decoracion : decoraciones) {
-            decoracion.pintar(g, camaraX);
-        }
-        
-        mapa.pintar(g, camaraX);
-        for (Enemigo enemigo : enemigos) {
-            enemigo.pintar(g, camaraX);
-        }
-        jugador.pintar(g, camaraX);
+        nivelActual.pintar(g, nivelActual.getCamaraX());
+        jugador.pintar(g, nivelActual.getCamaraX());
     }
 
     // Métodos de teclado (igual que en tu juego del Breakout)
@@ -137,10 +90,19 @@ public class PanelJuego extends JPanel implements Runnable {
     }
 
     public Mapa getMapa() {
-        return mapa;
+        return nivelActual.getMapa();
     }
 
     public Jugador getJugador() {
         return jugador;
+    }
+
+    public int getAncho() {
+        return ANCHO;
+    }
+
+    public void cambiarNivel(Nivel nuevoNivel) {
+        nivelActual = nuevoNivel;
+        nivelActual.inicializar(TAMAÑO_TILE);
     }
 }

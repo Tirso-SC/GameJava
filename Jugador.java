@@ -28,6 +28,7 @@ public class Jugador extends Entidad {
     // Animaciones
     Animacion animIdle;
     Animacion animCaminar;
+    Animacion animEntrarNivel;
     Animacion animSalto;
     Animacion animAtaque;
     Animacion animAtaqueFuerte;
@@ -52,6 +53,8 @@ public class Jugador extends Entidad {
     private void cargarAnimaciones() {
         animIdle    = new Animacion(DIR + "Idle.png",     5, true);
         animCaminar = new Animacion(DIR + "Walk.png",     5, true);
+        // Sustituye esta ruta por tu sprite de transicion cuando lo tengas listo.
+        animEntrarNivel = new Animacion(DIR + "walkUp.png", 5, true);
         animSalto   = new Animacion(DIR + "Jump.png",     5, false);
         animAtaque  = new Animacion(DIR + "Attack_1.png", 4, false);
         animAtaqueFuerte = new Animacion(DIR + "Attack_2.png", 4, false);
