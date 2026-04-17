@@ -5,7 +5,7 @@ public class EnemigoJefe extends Enemigo {
     final int VX                  = 3;
     final int DAÑO                = 3;
     final int DISTANCIA_DETECCION = 400;
-    final int DISTANCIA_ATAQUE    = 100;
+    final int DISTANCIA_ATAQUE    = 150;
 
     static final String DIR = "Assets/Personajes/Jefe1/";
 
@@ -33,18 +33,22 @@ public class EnemigoJefe extends Enemigo {
         }
 
         int cx  = mundoX + ancho / 2;
+        int cy  = y + alto / 2;
         int jcx = jugador.getX() + jugador.getAncho() / 2;
+        int jcy = jugador.getY() + jugador.getAlto() / 2;
         int dx  = Math.abs(jcx - cx);
+        int dy  = Math.abs(jcy - cy);
+        int distancia = (int) Math.sqrt(dx * dx + dy * dy);
 
         miraDerecha = jcx >= cx;
 
-        if (dx <= DISTANCIA_ATAQUE) {
+        if (distancia <= DISTANCIA_ATAQUE) {
             iniciarAtaque();
             return;
         }
 
         // El jefe siempre persigue al jugador si lo detecta
-        if (dx <= DISTANCIA_DETECCION) {
+        if (distancia <= DISTANCIA_DETECCION) {
             if (enSuelo && puedeAvanzar(mapa, miraDerecha, VX)) {
                 mundoX += miraDerecha ? VX : -VX;
             }
@@ -57,12 +61,12 @@ public class EnemigoJefe extends Enemigo {
 
     @Override
     public Rectangle getHitboxAtaque() {
-        int w = 80;
-        int h = alto / 2;
-        int ay = y + alto / 4;
+        int w = 120;
+        int h = (alto * 2) / 3;
+        int ay = y + alto / 6;
         return miraDerecha
-            ? new Rectangle(mundoX + ancho, ay, w,  h)
-            : new Rectangle(mundoX - w,     ay, w,  h);
+            ? new Rectangle(mundoX + ancho / 2, ay, w, h)
+            : new Rectangle(mundoX - w + ancho / 2, ay, w, h);
     }
 
     @Override

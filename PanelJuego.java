@@ -19,6 +19,9 @@ public class PanelJuego extends JPanel implements Runnable {
     private Nivel   nivelActual;
     private int alphaFundido;
     private BufferedImage imagenMuerte;
+    private BufferedImage imagenInicio;
+    private int tiempoMostrandoPantalla = 0;
+    private final int DURACION_PANTALLA_INICIO = 180; // 3 segundos a 60 FPS
 
     private HashMap<Integer, Boolean> teclasPresionadas = new HashMap<>();
 
@@ -39,9 +42,13 @@ public class PanelJuego extends JPanel implements Runnable {
 
         try {
             imagenMuerte = ImageIO.read(new File("Assets/Personajes/SamurayPersonajes/Samurai/SamuráiMuerto.png"));
+            imagenInicio = ImageIO.read(new File("Assets/Personajes/SamurayPersonajes/Samurai/Samuraihalando.png"));
         } catch (Exception e) {
             imagenMuerte = null;
+            imagenInicio = null;
         }
+        
+        tiempoMostrandoPantalla = DURACION_PANTALLA_INICIO;
     }
 
     @Override
@@ -58,6 +65,11 @@ public class PanelJuego extends JPanel implements Runnable {
     }
 
     private void actualizarEstado() {
+        // Decrementar tiempo de pantalla de inicio
+        if (tiempoMostrandoPantalla > 0) {
+            tiempoMostrandoPantalla--;
+        }
+        
         if (nivelActual instanceof Nivel1 && nivelActual.comprobarVictoria()) {
             if (jugador.mundoX < (TAMAÑO_TILE * 48)+40) {
                 jugador.mundoX += 2; // velocidad de la transicion
@@ -100,27 +112,43 @@ public class PanelJuego extends JPanel implements Runnable {
         nivelActual.pintar(g, nivelActual.getCamaraX());
         jugador.pintar(g, nivelActual.getCamaraX());
 
+        // Mostrar pantalla de inicio del nivel si el tiempo no ha expirado
+        if (tiempoMostrandoPantalla > 0) {
+            mostrarPantallaInfo(g, imagenInicio, "Nivel", "¡Preparado!");
+        }
+
         if (jugador.estaMuerto()) {
-            Graphics2D g2 = (Graphics2D) g;
-
-            g2.setColor(new Color(0, 0, 0, 170));
-            g2.fillRect(0, 450, getWidth(), 140);
-
-            if (imagenMuerte != null) {
-                g2.drawImage(imagenMuerte, 40, 140, 1536/2, 1024/2, null);
-            }
-
-            g2.setColor(Color.WHITE);
-            g2.setFont(new java.awt.Font("Trebuchet MS", java.awt.Font.BOLD, 44));
-            g2.drawString("Has muerto", getWidth() / 2, 510);
-            g2.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 22));
-            g2.drawString("Pulsa reiniciar para volver a empezar", getWidth() / 2, 540);
+            mostrarPantallaInfo(g, imagenMuerte, "Has muerto", "Pulsa reiniciar para volver a empezar");
         }
 
         if (alphaFundido > 0) {
             g.setColor(new Color(0, 0, 0, alphaFundido));
             g.fillRect(0, 0, getWidth(), getHeight());
         }
+    }
+
+    private void mostrarPantallaInfo(Graphics g, BufferedImage imagen, String textoTitulo, String textoSubtitulo) {
+        Graphics2D g2 = (Graphics2D) g;
+
+        // Banner semitransparente
+        g2.setColor(new Color(0, 0, 0, 170));
+        g2.fillRect(0, 450, getWidth(), 140);
+
+        // Imagen
+        if (imagen != null) {
+            g2.drawImage(imagen, 40, 140, 1536/2, 1024/2, null);
+        }
+
+        // Texto principal
+        g2.setColor(Color.WHITE);
+        g2.setFont(new java.awt.Font("Trebuchet MS", java.awt.Font.BOLD, 44));
+        int ancho = g2.getFontMetrics().stringWidth(textoTitulo);
+        g2.drawString(textoTitulo, getWidth() / 2 - ancho / 2, 510);
+
+        // Texto secundario
+        g2.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 22));
+        ancho = g2.getFontMetrics().stringWidth(textoSubtitulo);
+        g2.drawString(textoSubtitulo, getWidth() / 2 - ancho / 2, 540);
     }
 
     // Métodos de teclado (igual que en tu juego del Breakout)
@@ -147,5 +175,6 @@ public class PanelJuego extends JPanel implements Runnable {
     public void cambiarNivel(Nivel nuevoNivel) {
         nivelActual = nuevoNivel;
         nivelActual.inicializar(TAMAÑO_TILE);
+        tiempoMostrandoPantalla = DURACION_PANTALLA_INICIO;
     }
 }

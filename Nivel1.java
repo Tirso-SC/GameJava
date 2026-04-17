@@ -24,7 +24,7 @@ public class Nivel1 extends Nivel {
 
         int tamañoEnemigo = (int)(tamaño * 1.5);
         enemigos.add(new EnemigoBasico(tamaño * 5,  384, tamañoEnemigo));
-        enemigos.add(new EnemigoBasico(tamaño * 10, 384, tamañoEnemigo));
+        enemigos.add(new EnemigoBasico(tamaño * 20, 384, tamañoEnemigo));
         enemigos.add(new EnemigoJefe(tamaño * 45, 384, tamañoEnemigo * 2));
     }
 }
