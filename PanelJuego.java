@@ -1,6 +1,10 @@
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.HashMap;
+import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 public class PanelJuego extends JPanel implements Runnable {
@@ -13,6 +17,8 @@ public class PanelJuego extends JPanel implements Runnable {
     final int FRAME_TIME  = 1000 / FPS;
     private Jugador jugador;
     private Nivel   nivelActual;
+    private int alphaFundido;
+    private BufferedImage imagenMuerte;
 
     private HashMap<Integer, Boolean> teclasPresionadas = new HashMap<>();
 
@@ -29,6 +35,13 @@ public class PanelJuego extends JPanel implements Runnable {
         
         int tamañoJugador = TAMAÑO_TILE * 2;
         jugador = new Jugador(100, LARGO - tamañoJugador * 2, tamañoJugador);
+        alphaFundido = 0;
+
+        try {
+            imagenMuerte = ImageIO.read(new File("Assets/Personajes/SamurayPersonajes/Samurai/SamuráiMuerto.png"));
+        } catch (Exception e) {
+            imagenMuerte = null;
+        }
     }
 
     @Override
@@ -46,7 +59,7 @@ public class PanelJuego extends JPanel implements Runnable {
 
     private void actualizarEstado() {
         if (nivelActual instanceof Nivel1 && nivelActual.comprobarVictoria()) {
-            if (jugador.mundoX < TAMAÑO_TILE * 45) {
+            if (jugador.mundoX < (TAMAÑO_TILE * 48)+40) {
                 jugador.mundoX += 2; // velocidad de la transicion
                 jugador.miraDerecha = true;
                 jugador.animActual = jugador.animCaminar;
@@ -54,10 +67,17 @@ public class PanelJuego extends JPanel implements Runnable {
                 nivelActual.actualizar(this);
                 return;
             }
-            if (jugador.y <200) {
-                jugador.y += 2; // velocidad de la transicion
+            if (jugador.y >450) {
+                jugador.y -= 2; // velocidad de la transicion
                 jugador.animActual = jugador.animEntrarNivel;
                 jugador.animActual.actualizar();
+                nivelActual.actualizar(this);
+                return;
+            }
+
+            if (alphaFundido < 255) {
+                alphaFundido += 5;
+                if (alphaFundido > 255) alphaFundido = 255;
                 nivelActual.actualizar(this);
                 return;
             }
@@ -66,6 +86,7 @@ public class PanelJuego extends JPanel implements Runnable {
             cambiarNivel(new Nivel2());
             jugador.mundoX = 100;
             jugador.y = LARGO - TAMAÑO_TILE * 4;
+            alphaFundido = 0;
             return;
         }
 
@@ -78,6 +99,28 @@ public class PanelJuego extends JPanel implements Runnable {
         super.paintComponent(g);
         nivelActual.pintar(g, nivelActual.getCamaraX());
         jugador.pintar(g, nivelActual.getCamaraX());
+
+        if (jugador.estaMuerto()) {
+            Graphics2D g2 = (Graphics2D) g;
+
+            g2.setColor(new Color(0, 0, 0, 170));
+            g2.fillRect(0, 450, getWidth(), 140);
+
+            if (imagenMuerte != null) {
+                g2.drawImage(imagenMuerte, 40, 140, 1536/2, 1024/2, null);
+            }
+
+            g2.setColor(Color.WHITE);
+            g2.setFont(new java.awt.Font("Trebuchet MS", java.awt.Font.BOLD, 44));
+            g2.drawString("Has muerto", getWidth() / 2, 510);
+            g2.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 22));
+            g2.drawString("Pulsa reiniciar para volver a empezar", getWidth() / 2, 540);
+        }
+
+        if (alphaFundido > 0) {
+            g.setColor(new Color(0, 0, 0, alphaFundido));
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
     }
 
     // Métodos de teclado (igual que en tu juego del Breakout)
