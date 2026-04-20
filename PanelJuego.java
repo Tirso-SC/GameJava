@@ -36,7 +36,7 @@ public class PanelJuego extends JPanel implements Runnable {
         nivelActual = new Nivel1();
         nivelActual.inicializar(TAMAÑO_TILE);
         
-        int tamañoJugador = TAMAÑO_TILE * 2;
+        int tamañoJugador = TAMAÑO_TILE * 7/2;
         jugador = new Jugador(100, LARGO - tamañoJugador * 2, tamañoJugador);
         alphaFundido = 0;
 
