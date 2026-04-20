@@ -14,7 +14,8 @@ public class Nivel2 extends Nivel {
         int largoPanel = tamaño * 8;
 
         mapa = new Mapa(tamaño);
-        fondo = new Fondo(anchoPanel, largoPanel);
+        fondo = new Fondo(anchoPanel, largoPanel, 
+            "Assets/Background/GandalfHardcore FREE Platformer Assets/GandalfHardcore Background layers/Autumn BG/nivel2.png");
 
         decoraciones = new ArrayList<>();
         decoraciones.add(new ObjetoEstatico(

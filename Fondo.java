@@ -12,18 +12,25 @@ public class Fondo {
     // Qué tan rápido se mueve el fondo respecto al jugador (0 = estático, 1 = igual que jugador)
     final double VELOCIDAD_PARALAJE = 0.3;
 
-    static final String RUTA = "Assets/Background/GandalfHardcore FREE Platformer Assets/"
-                             + "GandalfHardcore Background layers/Autumn BG/c.png";
+    static final String RUTA_DEFECTO = "Assets/Background/GandalfHardcore FREE Platformer Assets/"
+                                      + "GandalfHardcore Background layers/Autumn BG/c.png";
+    
+    String ruta;
 
     public Fondo(int anchoPantalla, int altoPantalla) {
+        this(anchoPantalla, altoPantalla, RUTA_DEFECTO);
+    }
+    
+    public Fondo(int anchoPantalla, int altoPantalla, String ruta) {
         this.anchoPantalla = anchoPantalla;
         this.altoPantalla  = altoPantalla;
+        this.ruta = ruta;
         cargarImagen();
     }
 
     private void cargarImagen() {
         try {
-            BufferedImage original = ImageIO.read(new File(RUTA));
+            BufferedImage original = ImageIO.read(new File(ruta));
             if (original == null) {
                 System.err.println("No se pudo cargar el fondo.");
                 return;
